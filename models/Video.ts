@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { Schema, model, models } from "mongoose";
-import bcrypt from "bcryptjs";
+// import bcrypt from "bcryptjs";
 
 export const video_dimensions = {
     width: 1080,
