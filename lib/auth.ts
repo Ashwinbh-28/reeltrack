@@ -2,9 +2,9 @@ import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
-import connectToDatabase from "./db";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
+import { connectToDatabase } from "./db";
 
 
 export const authOptions: NextAuthOptions = {
@@ -61,5 +61,20 @@ export const authOptions: NextAuthOptions = {
                 }
             }
         })
-    ]
+    ],
+
+    callbacks: {
+        async jwt ({token,user}) {
+            if(user){
+                token.id = user.id;
+            }
+            return token;
+        },
+        async session({session,token}) {
+            if(session.user){
+                session.user.id = token.id as string;   
+            }
+            return session;
+        }
+    }
 }
