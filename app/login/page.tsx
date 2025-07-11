@@ -49,9 +49,15 @@ return(
           Login
         </button>
       </form>
+
+      <div className="text-center mt-4">
+        <p className="text-gray-600 dark:text-gray-400">
+          Dont have an account? <button onClick={() => router.push('/register')} className="text-indigo-500 hover:underline font-medium">Register</button>
+        </p>
+      </div>
     </div>
   </div>
-);
+  );
 }
 
 export default LoginForm;
