@@ -1,85 +1,71 @@
 import { NextAuthOptions } from "next-auth";
-// import GoogleProvider from "next-auth/providers/google";
-import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { connectToDatabase } from "./db";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
-import { connectToDatabase } from "./db";
-
 
 export const authOptions: NextAuthOptions = {
-    providers: [
-        GitHubProvider({
-            clientId: process.env.GITHUB_ID!,
-            clientSecret: process.env.GITHUB_SECRET!,
-        }),
-        CredentialsProvider({
-            name: 'Credentials',
-            credentials: {
-                username: { label: "Username", type: "text"},
-                email: {label: 'Email', type: 'email'},
-                password: {label: 'Password',type: 'password'}
-            },
-
-            async authorize(credentials){
-                if(!credentials || !credentials.email || !credentials.password){
-                    throw new Error('Invalid credentials');
-                }
-
-                try {
-                    await connectToDatabase();
-                    const user = await User.findOne({email: credentials.email});
-
-                    if(!user){
-                        throw new Error('User not found');
-                    }
-
-                    const isValid = await bcrypt.compare(
-                        credentials.password,
-                        user.password
-                    );
-
-                    if(!isValid){
-                        throw new Error('Invalid password');
-                    }
-
-
-                    return {
-                        id: user._id.toString(),
-                        name: user.name,
-                        email: user.email
-                    }
-
-
-                } catch (error) {
-                    console.error("Console Auth Error!",error);
-                    throw error
-                }
-            }
-        })
-    ],
-
-    callbacks: {
-        async jwt ({token,user}) {
-            if(user){
-                token.id = user.id;
-            }
-            return token;
-        },
-        async session({session,token}) {
-            if(session.user){
-                session.user.id = token.id as string;   
-            }
-            return session;
+  providers: [
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "passsword" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Missing email or passsword");
         }
+
+        try {
+          await connectToDatabase();
+          const user = await User.findOne({ email: credentials.email });
+
+          if (!user) {
+            throw new Error("No user found with this");
+          }
+
+          const isValid = await bcrypt.compare(
+            credentials.password,
+            user.passsword
+          );
+
+          if (!isValid) {
+            throw new Error("invalid password");
+          }
+
+          return {
+            id: user._id.toString(),
+            email: user.email,
+          };
+        } catch (error) {
+          console.error("Auth error: ", error);
+          throw error;
+        }
+      },
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
     },
-    pages:{
-        signIn: "/login",
-        error: "/login"
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string;
+      }
+      return session;
     },
-    session:{
-        strategy: "jwt",
-        maxAge: 30* 24 * 60 * 60,
-    },
-    secret: process.env.NEXTAUTH_SECRET
-}
+  },
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+};
